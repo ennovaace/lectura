@@ -1,63 +1,78 @@
 let registros = [];
-let serie = "";
+let scanner;
 
-document.getElementById("formulario").addEventListener("submit", function(e) {
-    e.preventDefault();
+// Inicializar el escáner y Service Worker al cargar
+window.onload = () => {
+  const guardados = localStorage.getItem("registros");
+  if (guardados) {
+    registros = JSON.parse(guardados);
+  }
+  startScanner();
 
-    if (!serie) {
-        alert("Primero escanea una Serie");
-        return;
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
+};
+
+// Escanear Serie con Html5Qrcode
+function startScanner() {
+  const reader = new Html5Qrcode("reader");
+  reader.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      document.getElementById("serie-input").value = decodedText;
+      reader.stop();
+    },
+    (errorMessage) => {
+      // Silencio: no queremos spam de errores
     }
+  ).catch(err => {
+    console.error("Error al iniciar el escáner:", err);
+  });
+}
 
-    let activa = parseFloat(document.getElementById("activa").value);
-    let potencia = parseFloat(document.getElementById("potencia").value);
-    let reactiva = parseFloat(document.getElementById("reactiva").value);
+// Guardar fila al enviar el formulario
+document.getElementById("formulario").addEventListener("submit", function(e) {
+  e.preventDefault();
 
-    registros.push([serie, activa, potencia, reactiva]);
+  const serie = document.getElementById("serie-input").value.trim();
+  if (!serie) {
+    alert("Por favor ingresa o escanea la Serie.");
+    return;
+  }
 
-    localStorage.setItem("registros", JSON.stringify(registros));
+  const activa = parseFloat(document.getElementById("activa").value);
+  const potencia = parseFloat(document.getElementById("potencia").value);
+  const reactiva = parseFloat(document.getElementById("reactiva").value);
 
-    alert("Guardado correctamente");
-    document.getElementById("formulario").reset();
-    serie = "";
-    document.getElementById("serie").innerText = "";
-    startScanner(); // vuelve a escanear
+  registros.push([serie, activa, potencia, reactiva]);
+  localStorage.setItem("registros", JSON.stringify(registros));
+
+  alert("Lectura guardada.");
+  this.reset();
+  document.getElementById("serie-input").value = "";
+  startScanner();
 });
 
-function exportarExcel() {
-    const nombre = prompt("Nombre del archivo (sin extensión):", "registros");
-    if (!nombre) return;
+// Exportar a Excel
+document.getElementById("exportar-btn").addEventListener("click", () => {
+  if (registros.length === 0) {
+    alert("No hay datos para exportar.");
+    return;
+  }
 
-    const data = [["Serie", "Activa kWh", "Potencia kW", "Reactiva kVARh"], ...registros];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Registros");
+  const nombre = prompt("Nombre del archivo (sin extensión):", "registros");
+  if (!nombre) return;
 
-    XLSX.writeFile(wb, nombre + ".xlsx");
-}
+  const data = [["Serie", "Activa kWh", "Potencia kW", "Reactiva kVARh"], ...registros];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Lecturas");
 
-function startScanner() {
-    const scanner = new Html5Qrcode("reader");
-    scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        (decodedText) => {
-            serie = decodedText;
-            document.getElementById("serie").innerText = decodedText;
-            scanner.stop();
-        }
-    );
-}
+  XLSX.writeFile(wb, nombre + ".xlsx");
 
-// Cargar registros desde localStorage al iniciar
-window.onload = () => {
-    const guardados = localStorage.getItem("registros");
-    if (guardados) {
-        registros = JSON.parse(guardados);
-    }
-    startScanner();
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js');
-    }
-};
+  registros = [];
+  localStorage.removeItem("registros");
+  alert("Datos exportados y memoria limpiada.");
+});
