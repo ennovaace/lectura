@@ -1,4 +1,4 @@
-const CACHE_NAME = 'registro-offline-cache-v2';
+const CACHE_NAME = 'registro-offline-cache-v3';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -6,8 +6,8 @@ const urlsToCache = [
   '/script.js',
   '/manifest.json',
   '/icon.png',
-  'https://unpkg.com/html5-qrcode',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  '/libs/html5-qrcode.min.js',
+  '/libs/xlsx.full.min.js'
 ];
 
 self.addEventListener('install', event => {
