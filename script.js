@@ -43,8 +43,8 @@ document.getElementById("formulario").addEventListener("submit", function(e) {
   }
 
   const activa = parseFloat(document.getElementById("activa").value);
-  const potencia = parseFloat(document.getElementById("potencia").value);
-  const reactiva = parseFloat(document.getElementById("reactiva").value);
+  const potencia = parseFloat(document.getElementById("potencia").value) || 0;
+  const reactiva = parseFloat(document.getElementById("reactiva").value) || 0;
 
   registros.push([serie, activa, potencia, reactiva]);
   localStorage.setItem("registros", JSON.stringify(registros));
